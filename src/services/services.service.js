@@ -4,8 +4,21 @@ const repository = new ServicesRepository();
 
 export class ServicesService {
 
-    async getServices() {
-        return await repository.getAll();
+    async getServices(category, available) {
+        let services = await repository.getAll();
+        
+        if (category) {
+        services = services.filter((service) => {
+        return service.category.toLowerCase() === category.toLowerCase();
+        })}
+    
+        if (available !== undefined) {
+        const availableBoolean = available === "true";
+        services = services.filter((service) => {
+        return service.available === availableBoolean;
+        })}
+
+        return services;
     }
   
     async getServiceById(id) {
@@ -13,8 +26,6 @@ export class ServicesService {
     }
 
     async createService(serviceData) {
-
-        const services = await this.getServices();
         const requiredFields = [
          "name",
          "description",
@@ -42,18 +53,7 @@ export class ServicesService {
         throw new Error("La duración debe ser un número mayor que 0");
         }
 
-        const ids = services.map(service => service.id);
-
-        const newId = ids.length > 0
-           ? Math.max(...ids) + 1
-           : 1;
-
-        const newService = {
-          ...serviceData,
-            id: newId
-        }
-
-       return await repository.create(newService);
+       return await repository.create(serviceData);
     }
 
     async updateService(id, updatedData) {
@@ -64,7 +64,7 @@ export class ServicesService {
             return null;
         }
 
-        const { id: ignoredId, ...safeData } = updatedData;
+        const { _id: ignoredId, ...safeData } = updatedData;
 
 
         if (safeData.duration !== undefined &&
@@ -77,9 +77,7 @@ export class ServicesService {
             throw new Error("El precio debe ser un número mayor que 0");
         }       
 
-        Object.assign(service, safeData);
-
-        return await repository.update(id, service);
+        return await repository.update(id, safeData);
     }
 
     async deleteService (id) {

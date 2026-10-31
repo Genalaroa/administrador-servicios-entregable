@@ -11,12 +11,10 @@ export class BookingsService {
     }
 
     async getBookings(){
-        return await repository.getAll()
+        return await repository.getAll();
     }
 
     async createBooking(bookingData){
-
-        const bookings = await this.getBookings();
         const requiredFields = [ 
             "clientName", 
             "clientEmail", 
@@ -34,21 +32,8 @@ export class BookingsService {
             throw new Error( 
                 `Faltan campos obligatorios: ${missingFields.join(", ")}`
             );
-        }
-
-        const ids = bookings.map(booking => booking.id);
-        
-        const newId = ids.length > 0
-           ? Math.max(...ids) + 1
-           : 1;
-
-        const newBooking = {
-            ...bookingData,
-            id: newId,
-            services: []
-        };
-
-        return await repository.create(newBooking);
+        }        
+        return await repository.create(bookingData);
     }
 
     async addServiceToBooking(bookingId, serviceId) {
@@ -66,7 +51,7 @@ export class BookingsService {
         }     
 
         const existingService = booking.services.find(
-            item => item.service === serviceId
+            item => item.service.toString() === service._id.toString()
         );
 
         if (existingService) {
@@ -75,13 +60,8 @@ export class BookingsService {
             booking.services.push({
                 service: serviceId,
                 quantity: 1
-            });
-        }
+            })}
 
         return await repository.update(bookingId, booking);
-
     }
-     
-
-
 }

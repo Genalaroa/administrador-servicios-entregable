@@ -9,7 +9,7 @@ export class BookingsRepository {
     }
 
     async getAll(){
-        return await dao.getAll()
+        return await dao.getAll();
     }
 
     async getById(id) {

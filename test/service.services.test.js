@@ -1,45 +1,49 @@
-import test from "node:test";
-import assert from "node:assert";
-import {ServicesService} from "../src/services/services.service.js";
+import test, { after } from "node:test";
+import assert from "node:assert/strict";
+import mongoose from "mongoose";
+import "dotenv/config";
 
+import { connectDB } from "../src/config/db.config.js";
+import { ServicesService } from "../src/services/services.service.js";
 
+const service = new ServicesService();
+
+await connectDB();
+
+const services = await service.getServices();
+const existingServiceId = services[0]._id.toString();
+const invalidServiceId = new mongoose.Types.ObjectId().toString();
+
+after(async () => {
+    await mongoose.connection.close();
+});
 
 test("getServices devuelve un array", async () => {
-    const service = new ServicesService();
-
     const services = await service.getServices();
 
     assert.ok(Array.isArray(services));
 });
 
 test("getServiceById devuelve un servicio existente", async () => {
-    const service = new ServicesService();
+    const serviceFound = await service.getServiceById(existingServiceId);
 
-    const serviceId = await service.getServiceById(1);
-
-    assert.ok(serviceId);
-    assert.strictEqual(serviceId.id, 1);
+    assert.ok(serviceFound);
+    assert.strictEqual(serviceFound._id.toString(), existingServiceId);
 });
 
 test("getServiceById devuelve null si el servicio no existe", async () => {
-    const service = new ServicesService();
+    const serviceFound = await service.getServiceById(invalidServiceId);
 
-    const serviceId = await service.getServiceById(999999);
-
-    assert.strictEqual(serviceId, null);
+    assert.strictEqual(serviceFound, null);
 });
 
 test("getServices devuelve al menos un servicio", async () => {
-    const service = new ServicesService();
-
     const services = await service.getServices();
 
-    assert.ok(services.length>0);
+    assert.ok(services.length > 0);
 });
 
 test("createService rechaza un precio negativo", async () => {
-    const service = new ServicesService();
-
     await assert.rejects(
         service.createService({
             name: "Prueba",
@@ -54,8 +58,6 @@ test("createService rechaza un precio negativo", async () => {
 });
 
 test("createService rechaza una duración negativa", async () => {
-    const service = new ServicesService();
-
     await assert.rejects(
         service.createService({
             name: "Prueba",
@@ -70,10 +72,8 @@ test("createService rechaza una duración negativa", async () => {
 });
 
 test("updateService rechaza un precio negativo", async () => {
-    const service = new ServicesService();
-
     await assert.rejects(
-        service.updateService(1, { price: -10 }),
+        service.updateService(existingServiceId, { price: -10 }),
         /El precio debe ser un número mayor que 0/
     );
 });

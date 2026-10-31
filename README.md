@@ -1,7 +1,9 @@
 ## Administrador de servicios
-Este proyecto está hecho con Node.js y express para gestionar los servicios y reservas de un sistema de turnos.
+Este proyecto está desarrollado con Node.js, Express y MongoDB para gestionar los servicios y reservas de un sistema de turnos.
+
 La API permite consultar, agregar, modificar y eliminar servicios, además de crear reservas y añadir servicios a las mismas.
-Los datos se almacenan mediante FileSystem en archivos JSON, por lo que los cambios persisten aunque el servidor se reinicie.
+
+Los datos se almacenan en MongoDB mediante Mongoose.
 
 ## Instalación
 Para instalar las dependencias, ejecuta:
@@ -17,6 +19,7 @@ Primero, crea un archivo `.env` en la carpeta principal con estas variables:
 ```env
 PORT=8080
 NODE_ENV=development
+MONGO_URI=tu_uri_de_mongodb
 ```
 
 Hay incluido un archivo `.env.example` como referencia.
@@ -35,12 +38,12 @@ La aplicación utiliza una arquitectura por capas para separar responsabilidades
 
 * Routes (src/routes/): definen los endpoints y los conectan con los controllers.
 * Controllers (src/controllers/): reciben las peticiones HTTP, gestionan los parámetros y devuelven las respuestas.
-* Services (src/services/): contienen las reglas de negocio, validaciones y generación de identificadores.
+* Services (src/services/): contienen las reglas de negocio y validaciones.
 * Repositories (src/repositories/): actúan como intermediarios entre los Services y los DAO.
-* DAO (src/dao/): gestionan el acceso y la persistencia de los datos mediante FileSystem.
+* DAO (src/dao/): gestionan el acceso y la persistencia de los datos mediante Mongoose.
 
 El flujo de la aplicación es:
-Router → Controller → Service → Repository → DAO → JSON
+Router → Controller → Service → Repository → DAO → Mongoose → MongoDB
 
 Esta separación facilita el mantenimiento y permite cambiar el sistema de almacenamiento sin modificar las reglas de negocio.
 
@@ -48,35 +51,38 @@ Esta separación facilita el mantenimiento y permite cambiar el sistema de almac
 
 src/
 ├── config/
-│   └── env.config.js
+│   ├── env.config.js
+│   └── db.config.js
 ├── controllers/
 │   ├── services.controller.js
 │   └── bookings.controller.js
-├── services/
-│   ├── services.service.js
-│   └── bookings.service.js
-├── repositories/
-│   ├── services.repository.js
-│   └── bookings.repository.js
 ├── dao/
 │   ├── services.dao.js
 │   └── bookings.dao.js
-├── data/
-│   ├── services.json
-│   └── bookings.json
+├── models/
+│   ├── service.model.js
+│   ├── booking.model.js
+│   └── message.model.js
+├── repositories/
+│   ├── services.repository.js
+│   └── bookings.repository.js
 ├── routes/
 │   ├── services.router.js
 │   └── bookings.router.js
+├── services/
+│   ├── services.service.js
+│   └── bookings.service.js
 ├── app.js
-└── server.js
-
-Los DAO utilizan `import.meta.url` para localizar los archivos JSON mediante rutas relativas a sus propios módulos, evitando depender del directorio desde el que se ejecuta el servidor.
+├── server.js
+└── test/
+    └── services.test.js
 
 ## Servicios
-Los servicios se almacenan en src/data/services.json.
+Los servicios se almacenan en MongoDB mediante el modelo Service.
+
 Cada servicio tiene estos datos:
 
-* id: identificador del servicio.
+* _id: identificador del servicio.
 * name: nombre.
 * description: descripción.
 * duration: duración.
@@ -99,7 +105,7 @@ GET /api/services?available=true
 Devuelve un servicio por su ID.
 
 ### POST /api/services
-Crea un nuevo servicio. El ID se genera automáticamente.
+Crea un nuevo servicio. MongoDB genera automáticamente el identificador _id.
 Ejemplo de body:
 
 ``` JSON
@@ -128,16 +134,18 @@ Ejemplo de body:
 Elimina un servicio por su ID.
 
 ## Reservas
-Las reservas se almacenan en `src/data/bookings.json`.
+Las reservas se almacenan en MongoDB mediante el modelo Booking.
 Cada reserva contiene:
 
-* id: identificador de la reserva.
+* _id: identificador de la reserva.
 * clientName: nombre del cliente.
 * clientEmail: correo electrónico del cliente.
 * date: fecha de la reserva.
 * time: hora de la reserva.
 * status: estado de la reserva.
 * services: servicios asociados a la reserva.
+
+El campo services contiene referencias a documentos Service mediante ObjectId y una cantidad asociada a cada servicio.
 
 ## Endpoints de reservas
 
@@ -164,21 +172,19 @@ Si el servicio todavía no está en la reserva, se añade con cantidad `1`.
 Si el mismo servicio ya existe, se incrementa su cantidad.
 Ejemplo:
 
-POST /api/bookings/1/services/2
+POST /api/bookings/:bid/services/:sid
 
 
 ## Persistencia de datos
-La aplicación utiliza FileSystem para leer y escribir los datos en:
 
-```
-src/data/services.json
-src/data/bookings.json
-```
+La aplicación utiliza MongoDB como sistema de almacenamiento y Mongoose para gestionar los modelos y las operaciones con la base de datos.
 
-Los cambios realizados en servicios y reservas se guardan en estos archivos, por lo que los datos persisten después de reiniciar el servidor.
+La conexión se configura mediante la variable de entorno MONGO_URI.
 
 ## Tests
 El proyecto utiliza el módulo de testing nativo de Node.js.
+
+Los tests se ejecutan contra MongoDB y requieren una conexión válida y servicios previamente registrados en la base de datos
 
 Para ejecutar las pruebas:
 

@@ -5,6 +5,6 @@ const router = Router();
 
 router.post("/", createBooking);
 router.get("/:bid", getBookingById);
-router.post("/:bid/services/:sid", addServiceToBooking)
+router.post("/:bid/services/:sid", addServiceToBooking);
 
 export default router;  

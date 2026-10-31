@@ -1,64 +1,34 @@
-import { promises as fs } from "fs";
-
-const filePath = new URL("../data/bookings.json", import.meta.url);
+import Booking from "../models/booking.model.js"
 
 export class BookingsDAO {
 
     async create(booking) {
+        const newBooking = await Booking.create(booking)
 
-        const fileData = await fs.readFile(filePath, "utf-8");
-        const bookings = JSON.parse(fileData);  
-                
-        bookings.push(booking);
-
-        const data = JSON.stringify(bookings, null, 2);
-        await fs.writeFile(filePath, data);
-
-        return booking
+        return newBooking
     }
 
     async getAll() {
-
-        const data = await fs.readFile(filePath, "utf-8");
-        const bookings= JSON.parse(data);
+        const bookings = await Booking.find();
         
         return bookings;
     }
 
     async getById(id) {
-
-        const bookings = await this.getAll();
-
-        const booking = bookings.find(
-            booking => booking.id === id
-        );
+        const booking = await Booking.findById(id);
 
         return booking || null;
     }
 
 
     async update(id, updatedBooking) {
-        const bookings= await this.getAll();
-
-        const index = bookings.findIndex(
-            booking=> booking.id === id
+        const booking = await Booking.findByIdAndUpdate(
+            id,
+            updatedBooking,
+            { new:true, runValidators: true }
         );
 
-        if (index === -1) {
-            return null;
-        }
-
-        bookings[index] = updatedBooking;
-
-        const data = JSON.stringify(bookings, null, 2);
-        await fs.writeFile(filePath, data);
-
-        return updatedBooking;
+        return booking;
     }
-
-
-
-
-
 }
 

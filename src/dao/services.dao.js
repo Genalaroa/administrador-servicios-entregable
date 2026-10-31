@@ -1,77 +1,40 @@
-import { promises as fs } from "node:fs";
-
-const filePath = new URL("../data/services.json", import.meta.url);
+import Service from "../models/service.model.js";
 
 export class ServicesDAO {
 
-    async getAll()  {
-        
-        const data = await fs.readFile(filePath, "utf-8");
-        const services = JSON.parse(data);
+    async getAll()  {    
+        const services = await Service.find();
         
         return services;
     }
 
     async getById(id) {
+        const service = await Service.findById(id);
 
-        const services = await this.getAll();
-        const service = services.find(
-            service => service.id === id
-            );
-
-        return service || null;
+        return service;
     }
     
 
-    async create(service) {
-            
-        const services = await this.getAll();
+    async create(service) {    
+        const newService = await Service.create(service);
 
-        services.push(service);
+        return newService;
+    }
 
-        const data = JSON.stringify(services, null, 2);
-        await fs.writeFile(filePath, data);
+    async update(id, updatedService) {
+        const service = await Service.findByIdAndUpdate(
+            id,
+            updatedService,
+            { new: true, runValidators: true }
+        );
 
         return service;
     }
 
-    async update(id, updatedService) {
-        const services = await this.getAll();
-
-        const index = services.findIndex(
-            service => service.id === id
-        );
-
-        if (index === -1) {
-            return null;
-        }
-
-        services[index] = updatedService;
-
-        const data = JSON.stringify(services, null, 2);
-        await fs.writeFile(filePath, data);
-
-        return updatedService;
-    }
-
     async delete(id) {
-
-       const services = await this.getAll();
-
-        const index = services.findIndex(
-            service => service.id === id
-        );
-
-        if (index === -1) {
-         return null;
-       }
-        
-       const deleted = services.splice(index, 1);
-
-       const data = JSON.stringify(services, null, 2);
-       await fs.writeFile(filePath, data);
-
-       return deleted[0];
+        const deleteService = await Service.findByIdAndDelete(id);
+    
+        return deleteService;
     }
 
 }
