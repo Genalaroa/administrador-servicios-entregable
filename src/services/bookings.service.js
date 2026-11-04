@@ -11,7 +11,10 @@ export class BookingsService {
     }
 
     async getBookings(){
-        return await repository.getAll();
+        const bookings = await repository.getAll();
+        const plainBookings = bookings.map((booking) => booking.toObject());
+
+        return plainBookings;
     }
 
     async createBooking(bookingData){

@@ -1,0 +1,23 @@
+<h2>Servicios disponibles (<span id="services-count">{{services.length}}</span>)</h2>
+
+<div id="services-list">
+    {{#each services}}
+        <article class="service" data-id="{{this._id}}">
+            <h3>{{this.name}}</h3>
+            <p>{{this.description}}</p>
+            <p>Duración: {{this.duration}} minutos</p>
+            <p>Precio: {{this.price}} €</p>
+            <p>Categoría: {{this.category}}</p>
+            <p>
+                Disponibilidad:
+                {{#if this.available}}
+                    Disponible
+                {{else}}
+                    No disponible
+                {{/if}}
+            </p>
+        </article>
+    {{else}}
+        <p>No hay servicios registrados.</p>
+    {{/each}}
+</div>

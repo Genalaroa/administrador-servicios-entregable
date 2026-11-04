@@ -9,7 +9,7 @@ export class BookingsDAO {
     }
 
     async getAll() {
-        const bookings = await Booking.find();
+        const bookings = await Booking.find().populate("services.service");
         
         return bookings;
     }
@@ -25,10 +25,10 @@ export class BookingsDAO {
         const booking = await Booking.findByIdAndUpdate(
             id,
             updatedBooking,
-            { new:true, runValidators: true }
-        );
+            { new: true, runValidators: true }
+        ).populate("services.service");
 
-        return booking;
-    }
+    return booking;
+}
 }
 

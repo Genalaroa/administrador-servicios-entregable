@@ -6,6 +6,7 @@ export class ServicesService {
 
     async getServices(category, available) {
         let services = await repository.getAll();
+        const plainServices = services.map((service) => service.toObject());
         
         if (category) {
         services = services.filter((service) => {
@@ -18,7 +19,7 @@ export class ServicesService {
         return service.available === availableBoolean;
         })}
 
-        return services;
+        return plainServices;
     }
   
     async getServiceById(id) {

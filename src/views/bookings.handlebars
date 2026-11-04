@@ -1,0 +1,25 @@
+<h2>Reservas</h2>
+
+<div id="bookings-list">
+    {{#each bookings}}
+        <article class="booking"  data-id="{{this._id}}">
+            <h3>{{this.clientName}}</h3>
+            <p>Email: {{this.clientEmail}}</p>
+            <p>Fecha: {{this.date}}</p>
+            <p>Hora: {{this.time}}</p>
+            <p>Estado: {{this.status}}</p>
+
+            <h4>Servicios contratados:</h4>
+
+            {{#each this.services}}
+                <p>
+                    Servicio: {{this.service.name}}
+                    Cantidad: {{this.quantity}}
+                </p>
+{{else}}
+    <p>Sin servicios añadidos</p>
+{{/each}}
+        </article>
+
+    {{/each}}
+</div>

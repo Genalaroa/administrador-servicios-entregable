@@ -1,7 +1,7 @@
 {
   "name": "administrador-servicios",
   "version": "1.0.0",
-  "description": "",
+  "description": "API REST de gestión de servicios y reservas con MongoDB, Handlebars y Socket.io",
   "main": "index.js",
   "scripts": {
     "start": "node src/server.js",
@@ -14,6 +14,8 @@
   "dependencies": {
     "dotenv": "^17.4.2",
     "express": "^5.2.1",
-    "mongoose": "^9.11.4"
+    "express-handlebars": "^9.0.4",
+    "mongoose": "^9.11.4",
+    "socket.io": "^4.8.4"
   }
 }

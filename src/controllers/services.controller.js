@@ -46,6 +46,9 @@ export const createService = async (req, res) => {
     try {
         const serviceData = req.body;
         const newService = await service.createService(serviceData);
+        
+        const io = req.app.get("io");
+        io.emit("serviceCreated", newService);
 
         res.status(201).json(newService);
 
@@ -98,6 +101,9 @@ export const deleteService = async (req, res) => {
         return res.status(404).json({
             error: "Servicio no encontrado"
         })}
+
+        const io = req.app.get("io");
+        io.emit("serviceDeleted", deletedService);
 
         res.status(200).json(deletedService);
         

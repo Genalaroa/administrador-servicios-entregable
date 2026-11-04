@@ -8,7 +8,10 @@ export const createBooking = async (req, res) => {
         const bookingData = req.body;     
         const newBooking = await bookingsService.createBooking(bookingData);   
            
-        res.status(201).json(newBooking); 
+        const io = req.app.get("io");
+        io.emit("bookingCreated", newBooking);
+        
+        return res.status(201).json(newBooking); 
 
     } catch (error) {   
         if (error.name === "ValidationError" || error.name === "Error") {
@@ -58,6 +61,9 @@ export const addServiceToBooking = async (req, res) => {
         return res.status(404).json({
             "error": "Reserva o servicio no encontrado"
         })}
+
+        const io = req.app.get("io");
+        io.emit("bookingUpdated", updatedBooking);
 
         res.status(200).json(updatedBooking);
 
