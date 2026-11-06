@@ -15,7 +15,7 @@ export class BookingsDAO {
     }
 
     async getById(id) {
-        const booking = await Booking.findById(id);
+        const booking = await Booking.findById(id).populate("services.service");
 
         return booking || null;
     }
@@ -25,7 +25,7 @@ export class BookingsDAO {
         const booking = await Booking.findByIdAndUpdate(
             id,
             updatedBooking,
-            { new: true, runValidators: true }
+            { returnDocument: 'after', runValidators: true }
         ).populate("services.service");
 
     return booking;

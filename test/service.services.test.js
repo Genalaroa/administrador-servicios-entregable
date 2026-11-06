@@ -10,8 +10,16 @@ const service = new ServicesService();
 
 await connectDB();
 
-const services = await service.getServices();
-const existingServiceId = services[0]._id.toString();
+const testService = await service.createService({
+    name: "Servicio de prueba",
+    description: "Descripción del servicio de prueba",
+    duration: 30,
+    price: 20,
+    category: "Pruebas",
+    available: true
+});
+
+const existingServiceId = testService._id.toString();
 const invalidServiceId = new mongoose.Types.ObjectId().toString();
 
 after(async () => {
@@ -21,7 +29,7 @@ after(async () => {
 test("getServices devuelve un array", async () => {
     const services = await service.getServices();
 
-    assert.ok(Array.isArray(services));
+    assert.ok(Array.isArray(services.services));
 });
 
 test("getServiceById devuelve un servicio existente", async () => {
@@ -40,7 +48,7 @@ test("getServiceById devuelve null si el servicio no existe", async () => {
 test("getServices devuelve al menos un servicio", async () => {
     const services = await service.getServices();
 
-    assert.ok(services.length > 0);
+    assert.ok(services.services.length > 0);
 });
 
 test("createService rechaza un precio negativo", async () => {

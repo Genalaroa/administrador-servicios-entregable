@@ -7,7 +7,54 @@ export const getServices = async (req, res) => {
     try {
         const category = req.query.category;  
         const available = req.query.available;  
-        let services = await service.getServices(category, available);
+        const page = req.query.page === undefined ? 1 : Number(req.query.page);
+        const limit = req.query.limit === undefined ? 10 : Number(req.query.limit);
+        const sortBy = req.query.sortBy || "price";
+        const order = req.query.order || "asc";
+
+        if (
+            !Number.isInteger(page) ||
+            page < 1
+        ) {
+            return res.status(400).json({
+                error: "La página debe ser un número entero, mayor o igual a 1."
+            });
+        }
+
+        if (
+            !Number.isInteger(limit) ||
+            limit < 1 ||
+            limit > 100
+        ) {
+            return res.status(400).json({
+                error: "El límite está entre 1 y 100."
+            });
+        }
+
+        if (
+            order !== "asc" &&
+            order !== "desc"
+        ) {
+            return res.status(400).json({
+                error: "El orden debe ser ascendente o descendente."
+            });
+        }
+
+        const allowedSortFields = ["price", "name", "duration"];
+
+        if (!allowedSortFields.includes(sortBy)) {
+            return res.status(400).json({
+                error: "Campo de ordenamiento no válido"
+            });
+        }
+
+        if (available !== undefined && available !== "true" && available !== "false") {
+            return res.status(400).json({
+                error: "El parámetro available debe ser true o false."
+            });
+        }
+
+        let services = await service.getServices(category, available, page, limit, sortBy, order);
 
         res.status(200).json(services);
     }catch(error){

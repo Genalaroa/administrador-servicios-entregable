@@ -39,7 +39,7 @@ export class BookingsService {
         return await repository.create(bookingData);
     }
 
-    async addServiceToBooking(bookingId, serviceId) {
+    async addServiceToBooking(bookingId, serviceId, quantity) {
 
         const service = await servicesService.getServiceById(serviceId);  
 
@@ -58,11 +58,11 @@ export class BookingsService {
         );
 
         if (existingService) {
-            existingService.quantity = existingService.quantity + 1;
+            existingService.quantity = existingService.quantity + quantity;
         } else {
             booking.services.push({
                 service: serviceId,
-                quantity: 1
+                quantity: quantity
             })}
 
         return await repository.update(bookingId, booking);

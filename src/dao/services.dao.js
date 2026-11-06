@@ -2,10 +2,19 @@ import Service from "../models/service.model.js";
 
 export class ServicesDAO {
 
-    async getAll()  {    
-        const services = await Service.find();
+    async getAll(filters, skip, limit, sort)  {    
+        const services = await Service.find(filters)
+        .skip(skip)
+        .limit(limit)
+        .sort(sort);
         
         return services;
+    }
+
+    async count(filters){
+        const count = await Service.countDocuments(filters)
+
+        return count;
     }
 
     async getById(id) {
@@ -25,7 +34,7 @@ export class ServicesDAO {
         const service = await Service.findByIdAndUpdate(
             id,
             updatedService,
-            { new: true, runValidators: true }
+            { returnDocument: 'after', runValidators: true }
         );
 
         return service;

@@ -55,7 +55,9 @@ export const addServiceToBooking = async (req, res) => {
     try {
         const bookingId = req.params.bid;
         const serviceId = req.params.sid;
-        const updatedBooking = await bookingsService.addServiceToBooking(bookingId, serviceId);
+        const quantity = req.body.quantity;
+
+        const updatedBooking = await bookingsService.addServiceToBooking(bookingId, serviceId, quantity);
         
         if (!updatedBooking) {
         return res.status(404).json({

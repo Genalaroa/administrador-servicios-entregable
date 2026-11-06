@@ -4,22 +4,40 @@ const repository = new ServicesRepository();
 
 export class ServicesService {
 
-    async getServices(category, available) {
-        let services = await repository.getAll();
-        const plainServices = services.map((service) => service.toObject());
-        
-        if (category) {
-        services = services.filter((service) => {
-        return service.category.toLowerCase() === category.toLowerCase();
-        })}
-    
-        if (available !== undefined) {
-        const availableBoolean = available === "true";
-        services = services.filter((service) => {
-        return service.available === availableBoolean;
-        })}
+    async getServices(category, available, page, limit, sortBy, order) {
+                
+        const skip = (page - 1) * limit;
+        const sort = {[sortBy]: order === "asc" ? 1: -1};
 
-        return plainServices;
+        const filters = {};
+
+        if (category) {
+            filters.category = category;
+        }
+
+        if (available !== undefined) {
+            filters.available = available === "true";
+        }
+        
+        const [services, total] = await Promise.all([
+        repository.getAll(filters, skip, limit, sort),
+        repository.count(filters)
+        ]);
+        
+        const totalPages = Math.ceil(total / limit);
+        const hasPrevPage = page > 1;
+        const hasNextPage = page < totalPages;
+
+        return {
+        services,
+        pagination: {
+            total,
+            page,
+            limit,
+            totalPages,
+            hasPrevPage,
+            hasNextPage
+        } }
     }
   
     async getServiceById(id) {

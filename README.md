@@ -23,6 +23,7 @@ MONGO_URI=tu_uri_de_mongodb
 ```
 
 Hay incluido un archivo `.env.example` como referencia.
+
 Después, ejecuta:
 
 ```bash
@@ -38,12 +39,15 @@ La aplicación utiliza una arquitectura por capas para separar responsabilidades
 
 - Routes (src/routes/): definen los endpoints y los conectan con los controllers.
 - Controllers (src/controllers/): reciben las peticiones HTTP, gestionan los parámetros y devuelven las respuestas.
-- Services (src/services/): contienen las reglas de negocio y validaciones.
+- Services (src/services/): contienen las reglas de negocio.
 - Repositories (src/repositories/): actúan como intermediarios entre los Services y los DAO.
 - DAO (src/dao/): gestionan el acceso y la persistencia de los datos mediante Mongoose.
+- Middlewares (src/middlewares/): contienen funciones intermedias para validar las peticiones.
+- Validators (src/validators/): definen los esquemas de validación mediante Zod.
 
 El flujo de la aplicación es:
-Router → Controller → Service → Repository → DAO → Mongoose → MongoDB
+
+Router → Middleware → Controller → Service → Repository → DAO → Mongoose → MongoDB
 
 Esta separación facilita el mantenimiento y permite cambiar el sistema de almacenamiento sin modificar las reglas de negocio.
 
@@ -60,6 +64,8 @@ src/
 ├── dao/
 │   ├── services.dao.js
 │   └── bookings.dao.js
+├── middlewares/
+│   └── validate.middleware.js
 ├── models/
 │   ├── service.model.js
 │   ├── booking.model.js
@@ -79,15 +85,19 @@ src/
 ├── services/
 │   ├── services.service.js
 │   └── bookings.service.js
+├── validators/
+│   ├── service.validator.js
+│   └── booking.validator.js
 ├── views/
 │   ├── layouts/
 │   │   └── main.handlebars
 │   ├── services.handlebars
 │   └── bookings.handlebars
 ├── app.js
-├── server.js
+└── server.js
+
 test/
-  └── services.test.js
+└── services.test.js
 
 ## Servicios
 Los servicios se almacenan en MongoDB mediante el modelo Service.
@@ -105,14 +115,56 @@ Cada servicio tiene estos datos:
 ## Endpoints
 
 ### GET /api/services
-Devuelve todos los servicios.
+Devuelve los servicios registrados y permite realizar consultas mediante parámetros de búsqueda.
 
-También permite filtrar por categoría y disponibilidad:
+Filtros disponibles:
+
+- category: filtra por categoría.
+- available: filtra por disponibilidad (true o false).
+
+Ejemplos:
 
 ```
 GET /api/services?category=Manicura
 GET /api/services?available=true
 ```
+
+Paginación:
+
+- page: número de página.
+- limit: cantidad de resultados por página.
+
+Ejemplo:
+
+```
+GET /api/services?page=1&limit=5
+```
+
+Ordenamiento:
+
+- sortBy: campo por el que ordenar (price, name o duration).
+- order: dirección del ordenamiento (asc o desc).
+
+Ejemplo:
+
+```
+GET /api/services?sortBy=price&order=desc
+```
+
+También se pueden combinar todos los parámetros:
+
+```
+GET /api/services?category=Manicura&available=true&page=1&limit=5&sortBy=price&order=desc
+```
+
+La respuesta incluye los servicios encontrados y los metadatos de paginación:
+
+- total: número total de resultados.
+- page: página actual.
+- limit: resultados por página.
+- totalPages: número total de páginas.
+- hasPrevPage: indica si existe una página anterior.
+- hasNextPage: indica si existe una página siguiente.
 
 ### GET /api/services/:sid
 Devuelve un servicio por su ID.
@@ -163,10 +215,20 @@ Cada reserva contiene:
 
 El campo services contiene referencias a documentos Service mediante ObjectId y una cantidad asociada a cada servicio.
 
+La estructura de cada elemento es:
+
+```JSON
+{
+  "service": "ObjectId del servicio",
+  "quantity": 2
+}
+```
+
 ## Endpoints de reservas
 
 ### POST /api/bookings
 Crea una nueva reserva. El ID se genera automáticamente y la reserva comienza con el array `services` vacío.
+
 Ejemplo de body:
 
 ```JSON
@@ -179,17 +241,68 @@ Ejemplo de body:
 }
 ```
 
-### GET /api/bookings/:bid
+### GET /api/bookings/
 Devuelve una reserva por su ID.
 
-### POST /api/bookings/:bid/services/:sid
+Los servicios asociados se recuperan mediante populate(), mostrando los datos completos de cada servicio relacionado en lugar de devolver únicamente su ObjectId.
+
+### POST /api/bookings//services/
 Añade un servicio a una reserva existente.
-Si el servicio todavía no está en la reserva, se añade con cantidad `1`.
-Si el mismo servicio ya existe, se incrementa su cantidad.
-Ejemplo:
 
-POST /api/bookings/:bid/services/:sid
+La cantidad se recibe mediante el body de la petición:
 
+```JSON
+{
+  "quantity": 3
+}
+```
+
+Si el servicio todavía no está en la reserva, se añade con cantidad indicada.
+
+Si el mismo servicio ya existe, se incrementa su cantidad sumando la nueva cantidad recibida.
+
+## Validación de datos con Zod
+
+El proyecto utiliza Zod para validar los datos recibidos en las peticiones antes de ejecutar las operaciones en MongoDB.
+
+Los esquemas de validación se encuentran en src/validators/ y se aplican mediante el middleware validate.middleware.js.
+
+### Validación de servicios:
+
+- Nombre con un mínimo de 3 caracteres.
+- Descripción con un mínimo de 10 caracteres.
+- Duración y precio con valores positivos.
+- Disponibilidad de tipo booleano.leano.
+- En las actualizaciones, los campos son opcionales, pero mantienen sus restricciones.
+
+### Validación de reservas:
+
+- Nombre del cliente con un mínimo de 3 caracteres.
+- Email con formato válido.
+- Fecha válida.
+- Hora y estado no vacíos.
+- Si se incluyen servicios, se valida el formato del ObjectId y que la cantidad sea un entero positivo.
+
+### Validación al añadir servicios a una reserva:
+
+- La cantidad debe ser un número entero positivo.
+- No se permiten cantidades iguales a cero, negativas o decimales.
+
+Cuando los datos no cumplen las condiciones establecidas, el middleware devuelve una respuesta HTTP 400 con información sobre los errores de validación, evitando que los datos inválidos lleguen a la base de datos.
+
+## Relaciones y Populate
+
+Las reservas y los servicios están relacionados mediante referencias ObjectId.
+
+El modelo Booking almacena el identificador del servicio y su cantidad, sin duplicar el documento completo del servicio.
+
+Para consultar una reserva con sus servicios asociados se utiliza Mongoose populate():
+
+```
+Booking.findById(id).populate("services.service");
+```
+
+De esta manera, al consultar una reserva se obtienen los datos completos de los servicios relacionados, manteniendo la referencia original en MongoDB.
 
 ## Persistencia de datos
 
@@ -216,8 +329,8 @@ El proyecto utiliza Socket.io para actualizar las vistas automáticamente cuando
 
 Eventos implementados:
 
-| Evento | Funcionalidad |
-|---|---|
+| Evento           | Funcionalidad |
+|------------------|---------------|
 | `serviceCreated` | Añade un servicio a la vista |
 | `serviceDeleted` | Elimina un servicio de la vista |
 | `bookingCreated` | Añade una reserva a la vista |

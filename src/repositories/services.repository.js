@@ -4,8 +4,12 @@ const dao = new ServicesDAO ();
 
 export class ServicesRepository {
 
-    async getAll() {
-        return await dao.getAll();
+    async getAll(filters, skip, limit, sort) {
+        return await dao.getAll(filters, skip, limit, sort);
+    }
+
+    async count(filters) {
+    return await dao.count(filters);
     }
 
     async getById(id) {
