@@ -1,16 +1,50 @@
-import test, { after } from "node:test";
-import assert from "node:assert/strict";
-import mongoose from "mongoose";
-import "dotenv/config";
 
-import { connectDB } from "../src/config/db.config.js";
+import test from "node:test";
+import assert from "node:assert/strict";
 import { ServicesService } from "../src/services/services.service.js";
 
-const service = new ServicesService();
+const mockServices = [];
 
-await connectDB();
+const mockRepository = {
+    getAll: async (filters) => {
+        return mockServices.filter(service =>
+            (!filters.category || service.category === filters.category) &&
+            (filters.available === undefined || service.available === filters.available)
+        );
+    },
 
-const testService = await service.createService({
+    count: async (filters) => {
+        return mockServices.filter(service =>
+            (!filters.category || service.category === filters.category) &&
+            (filters.available === undefined || service.available === filters.available)
+        ).length;
+    },
+
+    getById: async (id) =>
+        mockServices.find(service => service._id === id) ?? null,
+
+    create: async (data) => {
+        const newService = { _id: "1", ...data };
+        mockServices.push(newService);
+        return newService;
+    },
+
+    update: async (id, data) => {
+        const index = mockServices.findIndex(service => service._id === id);
+
+        if (index === -1) return null;
+
+        mockServices[index] = { ...mockServices[index], ...data };
+
+        return mockServices[index];
+    },
+
+    delete: async () => true
+};
+
+const service = new ServicesService(mockRepository);
+
+await service.createService({
     name: "Servicio de prueba",
     description: "Descripción del servicio de prueba",
     duration: 30,
@@ -19,24 +53,31 @@ const testService = await service.createService({
     available: true
 });
 
-const existingServiceId = testService._id.toString();
-const invalidServiceId = new mongoose.Types.ObjectId().toString();
-
-after(async () => {
-    await mongoose.connection.close();
+await service.createService({
+    name: "Corte de pelo",
+    description: "Servicio de peluquería",
+    duration: 45,
+    price: 15,
+    category: "Peluquería",
+    available: false
 });
 
-test("getServices devuelve un array", async () => {
-    const services = await service.getServices();
+const existingServiceId = "1";
+const invalidServiceId = "999";
 
-    assert.ok(Array.isArray(services.services));
+test("getServices devuelve un array", async () => {
+    const result = await service.getServices(
+        undefined, undefined, 1, 10, "name", "asc"
+    );
+
+    assert.ok(Array.isArray(result.services));
 });
 
 test("getServiceById devuelve un servicio existente", async () => {
     const serviceFound = await service.getServiceById(existingServiceId);
 
     assert.ok(serviceFound);
-    assert.strictEqual(serviceFound._id.toString(), existingServiceId);
+    assert.strictEqual(serviceFound._id, existingServiceId);
 });
 
 test("getServiceById devuelve null si el servicio no existe", async () => {
@@ -46,9 +87,27 @@ test("getServiceById devuelve null si el servicio no existe", async () => {
 });
 
 test("getServices devuelve al menos un servicio", async () => {
-    const services = await service.getServices();
+    const result = await service.getServices(
+        undefined, undefined, 1, 10, "name", "asc"
+    );
 
-    assert.ok(services.services.length > 0);
+    assert.ok(result.services.length > 0);
+});
+
+test("getServices filtra por categoría", async () => {
+    const result = await service.getServices(
+        "Peluquería", undefined, 1, 10, "name", "asc"
+    );
+
+    assert.ok(result.services.every(item => item.category === "Peluquería"));
+});
+
+test("getServices filtra por disponibilidad", async () => {
+    const result = await service.getServices(
+        undefined, "true", 1, 10, "name", "asc"
+    );
+
+    assert.ok(result.services.every(item => item.available === true));
 });
 
 test("createService rechaza un precio negativo", async () => {

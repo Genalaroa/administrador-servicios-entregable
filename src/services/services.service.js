@@ -1,8 +1,10 @@
 import { ServicesRepository } from "../repositories/services.repository.js";
 
-const repository = new ServicesRepository();
-
 export class ServicesService {
+
+    constructor(repository = new ServicesRepository()) {
+        this.repository = repository;
+    }
 
     async getServices(category, available, page, limit, sortBy, order) {
                 
@@ -20,8 +22,8 @@ export class ServicesService {
         }
         
         const [services, total] = await Promise.all([
-        repository.getAll(filters, skip, limit, sort),
-        repository.count(filters)
+        this.repository.getAll(filters, skip, limit, sort),
+        this.repository.count(filters)
         ]);
         
         const totalPages = Math.ceil(total / limit);
@@ -41,7 +43,7 @@ export class ServicesService {
     }
   
     async getServiceById(id) {
-        return await repository.getById(id);
+        return await this.repository.getById(id);
     }
 
     async createService(serviceData) {
@@ -72,7 +74,7 @@ export class ServicesService {
         throw new Error("La duración debe ser un número mayor que 0");
         }
 
-       return await repository.create(serviceData);
+       return await this.repository.create(serviceData);
     }
 
     async updateService(id, updatedData) {
@@ -96,11 +98,11 @@ export class ServicesService {
             throw new Error("El precio debe ser un número mayor que 0");
         }       
 
-        return await repository.update(id, safeData);
+        return await this.repository.update(id, safeData);
     }
 
     async deleteService (id) {
-        return await repository.delete(id);
+        return await this.repository.delete(id);
     }
 
 }

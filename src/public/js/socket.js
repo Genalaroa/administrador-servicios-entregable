@@ -3,10 +3,11 @@ const socket = io();
 socket.on("serviceCreated", (dato) => {
 
     const count = document.getElementById("services-count");
-    count.textContent = Number(count.textContent) + 1;
-    
+
     if (!count) return;
 
+    count.textContent = Number(count.textContent) + 1;
+      
     const container = document.getElementById("services-list");
 
     container.insertAdjacentHTML("beforeend", `
@@ -30,7 +31,9 @@ socket.on("serviceDeleted", (dato) => {
         serviceCard.remove();
 
         const count = document.getElementById("services-count");
-        count.textContent = Number(count.textContent) - 1;
+        if (count){
+            count.textContent = Number(count.textContent) - 1;
+        }
     }
 });
 
