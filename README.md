@@ -97,7 +97,8 @@ src/
 └── server.js
 
 test/
-└── services.test.js
+├── service.services.test.js
+└── services.controller.test.js
 
 ## Servicios
 Los servicios se almacenan en MongoDB mediante el modelo Service.
@@ -241,12 +242,12 @@ Ejemplo de body:
 }
 ```
 
-### GET /api/bookings/
+### GET /api/bookings/:bid
 Devuelve una reserva por su ID.
 
 Los servicios asociados se recuperan mediante populate(), mostrando los datos completos de cada servicio relacionado en lugar de devolver únicamente su ObjectId.
 
-### POST /api/bookings//services/
+### POST /api/bookings/:bid/services/:sid
 Añade un servicio a una reserva existente.
 
 La cantidad se recibe mediante el body de la petición:
@@ -272,7 +273,7 @@ Los esquemas de validación se encuentran en src/validators/ y se aplican median
 - Nombre con un mínimo de 3 caracteres.
 - Descripción con un mínimo de 10 caracteres.
 - Duración y precio con valores positivos.
-- Disponibilidad de tipo booleano.leano.
+- Disponibilidad de tipo booleano.
 - En las actualizaciones, los campos son opcionales, pero mantienen sus restricciones.
 
 ### Validación de reservas:
@@ -341,21 +342,28 @@ El servidor emite los eventos después de realizar correctamente las operaciones
 El cliente escucha estos eventos mediante una conexión Socket.io y actualiza dinámicamente el contenido HTML.
 
 ## Tests
-El proyecto utiliza el módulo de testing nativo de Node.js.
 
-Los tests se ejecutan contra MongoDB y requieren una conexión válida. Algunas pruebas necesitan servicios registrados previamente en la base de datos.
+El proyecto utiliza el módulo de testing nativo de Node.js (`node:test`) y `assert` para comprobar el funcionamiento de los servicios y controladores.
+
+Las pruebas utilizan un repositorio simulado (*mock repository*) para evitar depender de una conexión externa a MongoDB.
 
 Para ejecutar las pruebas:
 
 ```bash
 npm test
 ```
-Actualmente incluye 7 tests que comprueban:
 
-- Que getServices() devuelve un array.
-- Que getServiceById() devuelve un servicio existente.
-- Que getServiceById() devuelve null si el servicio no existe.
-- Que getServices() devuelve al menos un servicio.
-- Que createService() rechaza precios negativos.
-- Que createService() rechaza duraciones negativas.
-- Que updateService() rechaza precios negativos.
+Actualmente incluye 11 tests que comprueban:
+
+- Que `getServices()` devuelve un array.
+- Que `getServiceById()` devuelve un servicio existente.
+- Que `getServiceById()` devuelve null cuando el servicio no existe.
+- Que `getServices()` devuelve al menos un servicio.
+- Que los filtros por categoría y disponibilidad funcionan correctamente.
+- Que `createService()` rechaza precios negativos.
+- Que `createService()` rechaza duraciones negativas.
+- Que `updateService()` rechaza precios negativos.
+- Que el controlador emite `serviceCreated` al crear un servicio.
+- Que el controlador emite `serviceDeleted` al eliminar un servicio.
+
+Resultado de la última ejecución: **11 tests superados, 0 fallidos.**

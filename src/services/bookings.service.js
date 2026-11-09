@@ -54,8 +54,14 @@ export class BookingsService {
         }     
 
         const existingService = booking.services.find(
-            item => item.service.toString() === service._id.toString()
-        );
+        item => {
+            const existingServiceId = item.service._id
+                ? item.service._id.toString()
+                : item.service.toString();
+
+            return existingServiceId === service._id.toString();
+        }
+);
 
         if (existingService) {
             existingService.quantity = existingService.quantity + quantity;

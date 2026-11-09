@@ -95,7 +95,7 @@ export const createService = async (req, res) => {
         const newService = await service.createService(serviceData);
         
         const io = req.app.get("io");
-        io.emit("serviceCreated", newService);
+        io?.emit("serviceCreated", newService);
 
         res.status(201).json(newService);
 
@@ -150,7 +150,7 @@ export const deleteService = async (req, res) => {
         })}
 
         const io = req.app.get("io");
-        io.emit("serviceDeleted", deletedService);
+        io?.emit("serviceDeleted", deletedService);
 
         res.status(200).json(deletedService);
         
